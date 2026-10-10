@@ -1,0 +1,92 @@
+{
+  "name": "Cerebro Web Agent Research & Notification Pipeline",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "cerebro-research-alert",
+        "options": {}
+      },
+      "name": "Webhook Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        250,
+        300
+      ],
+      "id": "webhook-trigger-id"
+    },
+    {
+      "parameters": {
+        "title": "=[Cerebro Web Agent] Research Complete: {{ $json[\"title\"] }}",
+        "text": "=**Topic**: {{ $json[\"query\"] }}\n**Severity**: {{ $json[\"severity\"].toUpperCase() }}\n**Summary**: {{ $json[\"summary\"] }}\n\nRead the full report in your inbox or database.",
+        "options": {}
+      },
+      "name": "Discord Alert",
+      "type": "n8n-nodes-base.discord",
+      "typeVersion": 1,
+      "position": [
+        480,
+        180
+      ],
+      "id": "discord-alert-id"
+    },
+    {
+      "parameters": {
+        "toEmail": "admin@cerebro.internal",
+        "subject": "=[Cerebro Web Agent] Report: {{ $json[\"title\"] }}",
+        "emailType": "html",
+        "html": "=<h2>Cerebro Autonomous Scouting Report</h2>\n<p><strong>Query:</strong> {{ $json[\"query\"] }}</p>\n<p><strong>Severity:</strong> {{ $json[\"severity\"] }}</p>\n<p><strong>Summary:</strong> {{ $json[\"summary\"] }}</p>\n<hr/>\n<h3>Research Content</h3>\n<div>{{ $json[\"report\"] }}</div>",
+        "options": {}
+      },
+      "name": "Email Notification",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 1,
+      "position": [
+        480,
+        300
+      ],
+      "id": "email-notification-id"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=INSERT INTO research_reports (query, title, summary, report, severity, created_at) \nVALUES ('{{ $json[\"query\"] }}', '{{ $json[\"title\"] }}', '{{ $json[\"summary\"] }}', '{{ $json[\"report\"] }}', '{{ $json[\"severity\"] }}', NOW());"
+      },
+      "name": "Save to Database",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 1,
+      "position": [
+        480,
+        420
+      ],
+      "id": "postgres-save-id"
+    }
+  ],
+  "connections": {
+    "Webhook Trigger": {
+      "main": [
+        [
+          {
+            "node": "Discord Alert",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Email Notification",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Save to Database",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {},
+  "id": "cerebro-web-agent-pipeline-id"
+}

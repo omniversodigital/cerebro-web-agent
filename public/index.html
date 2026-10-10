@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cerebro OMEGA | Research Agent Dashboard</title>
+  <meta name="description" content="Autonomous Web Research & Action Agent powered by LangGraph, Crawlee, and local Qdrant vector memory.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="glass-bg"></div>
+
+  <div class="app-container">
+    <!-- Header -->
+    <header class="app-header">
+      <div class="logo-area">
+        <span class="logo-icon">Ω</span>
+        <div class="logo-text">
+          <h1>CEREBRO OMEGA</h1>
+          <p>Autonomous Web Research &amp; Action Agent</p>
+        </div>
+      </div>
+
+      <!-- Live System Status -->
+      <div class="system-stats">
+        <div class="stat-badge" id="status-scraper">
+          <span class="pulse-dot"></span>
+          <span>Scraper: Checking…</span>
+        </div>
+        <div class="stat-badge" id="status-model">
+          <span class="pulse-dot"></span>
+          <span>LLM: Checking…</span>
+        </div>
+        <div class="stat-badge" id="status-qdrant">
+          <span>Qdrant: Checking…</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Navigation -->
+    <nav class="app-nav">
+      <button class="nav-btn active" data-tab="orchestration">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 14l-5-5 1.41-1.41L12 14.17l7.59-7.59L21 8l-9 9z"/></svg>
+        Orchestration Core
+      </button>
+      <button class="nav-btn" data-tab="memory">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M20 6H4v2h16V6zm-2-4H6v2h12V2zM4 10v12l8-4 8 4V10H4zm14 9.62l-6-3-6 3V12h12v7.62z"/></svg>
+        Memory Grid
+      </button>
+      <button class="nav-btn" data-tab="history">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M13 3c-4.97 0-9 4.03-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42C8.27 19.99 10.51 21 13 21c4.97 0 9-4.03 9-9s-4.03-9-9-9zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/></svg>
+        Run History
+      </button>
+      <button class="nav-btn" data-tab="computer">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M20 18c1.1 0 1.99-.9 1.99-2L22 6c0-1.11-.9-2-2-2H4c-1.1 0-2 .89-2 2v10c0 1.1.9 2 2 2H0v2h24v-2h-4zM4 6h16v10H4V6z"/></svg>
+        Computer Use
+      </button>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="app-main">
+
+      <!-- Orchestration Tab -->
+      <section class="tab-panel active" id="tab-orchestration">
+        <div class="grid-layout">
+
+          <!-- Control Panel -->
+          <div class="glass-card control-card">
+            <h2>Trigger Scouting Task</h2>
+            <p class="subtitle">Deploy the LangGraph agent to scrape, extract, and index findings.</p>
+
+            <form id="run-agent-form">
+              <div class="form-group">
+                <label for="query">Research Target / Query</label>
+                <input type="text" id="query" name="query"
+                  placeholder="e.g. Find recent Ethereum Layer-2 developments" required>
+              </div>
+
+              <div class="form-group">
+                <label for="seed-url">Seed URL (Optional)</label>
+                <input type="url" id="seed-url" name="seed-url"
+                  placeholder="https://example.com/latest-news">
+              </div>
+
+              <!-- n8n Toggle -->
+              <div class="form-group toggle-group">
+                <label class="toggle-label" for="skip-n8n">
+                  <input type="checkbox" id="skip-n8n" name="skip-n8n">
+                  <span class="toggle-track">
+                    <span class="toggle-thumb"></span>
+                  </span>
+                  Skip n8n Webhook Dispatch
+                </label>
+                <p class="toggle-hint">Disable if n8n is not running locally on port 5678.</p>
+              </div>
+
+              <button type="submit" class="primary-btn" id="submit-btn">
+                <svg class="btn-icon" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/></svg>
+                <span>Deploy Research Agent</span>
+                <span class="loader-spinner hidden"></span>
+              </button>
+            </form>
+          </div>
+
+          <!-- Live Terminal Feed -->
+          <div class="glass-card output-card">
+            <div class="card-header">
+              <div>
+                <h2>Execution Feed</h2>
+                <span class="feed-status" id="agent-status-label">Idle</span>
+              </div>
+              <div class="terminal-controls">
+                <label class="toggle-label autoscroll-label" for="autoscroll-toggle" title="Auto-scroll to latest log line">
+                  <input type="checkbox" id="autoscroll-toggle" checked>
+                  <span class="toggle-track"><span class="toggle-thumb"></span></span>
+                  Auto-scroll
+                </label>
+                <button class="secondary-btn danger-btn hidden" id="abort-btn" title="Cancel the running agent">⬛ Abort</button>
+              </div>
+            </div>
+            <div class="terminal-container">
+              <pre id="terminal-feed">Ready to boot agent…</pre>
+            </div>
+          </div>
+        </div>
+
+        <!-- Compiled Report -->
+        <div class="glass-card report-card hidden" id="report-container">
+          <div class="card-header">
+            <h2>Compiled Research Report</h2>
+            <div class="report-actions">
+              <button class="secondary-btn" id="copy-report-btn">Copy Markdown</button>
+              <button class="secondary-btn" id="export-report-btn">Export .md</button>
+            </div>
+          </div>
+          <div class="report-content" id="report-content-body">
+            <!-- Report renders here -->
+          </div>
+        </div>
+
+        <!-- Quick Crawl Tester -->
+        <div class="glass-card crawl-test-card">
+          <h2>Quick Crawl Tester</h2>
+          <p class="subtitle">Test the Playwright crawler directly — no agent required.</p>
+          <form id="crawl-test-form" class="crawl-test-form">
+            <input type="url" id="crawl-test-url" placeholder="https://example.com" required>
+            <button type="submit" class="secondary-btn">Test Crawl</button>
+          </form>
+          <div id="crawl-test-result" class="crawl-test-result hidden"></div>
+        </div>
+      </section>
+
+      <!-- Memory Grid Tab -->
+      <section class="tab-panel" id="tab-memory">
+        <div class="glass-card memory-card">
+          <div class="card-header">
+            <div>
+              <h2>Extracted Research Facts <span class="facts-count-badge hidden" id="facts-count-badge">0</span></h2>
+              <p class="subtitle">Semantic memory facts stored in local Qdrant collection</p>
+            </div>
+            <button class="secondary-btn" id="refresh-facts-btn">↻ Sync Database</button>
+          </div>
+
+          <div class="facts-search-bar">
+            <input type="text" id="facts-search-input" placeholder="Filter indexed facts…">
+          </div>
+
+          <div class="facts-grid" id="facts-grid-body">
+            <!-- Facts render here -->
+          </div>
+        </div>
+      </section>
+
+      <!-- History Tab -->
+      <section class="tab-panel" id="tab-history">
+        <div class="glass-card history-card">
+          <div class="card-header">
+            <div>
+              <h2>Agent Execution Logs</h2>
+              <p class="subtitle">Review results and metrics of previous research cycles. Click "View Report" to expand.</p>
+            </div>
+            <button class="secondary-btn danger-btn" id="clear-history-btn">Clear All</button>
+          </div>
+          <div class="history-list" id="history-list-body">
+            <!-- History renders here -->
+          </div>
+        </div>
+      </section>
+
+      <!-- Computer Use Playground Tab -->
+      <section class="tab-panel" id="tab-computer">
+        <div class="computer-status-row">
+          <div class="computer-health-badge" id="computer-badge-node">
+            <span class="computer-badge-dot"></span>
+            <span>Node: Checking…</span>
+          </div>
+          <div class="computer-health-badge" id="computer-badge-playwright">
+            <span class="computer-badge-dot"></span>
+            <span>Playwright: Checking…</span>
+          </div>
+          <div class="computer-health-badge" id="computer-badge-key">
+            <span class="computer-badge-dot"></span>
+            <span>API Key: Checking…</span>
+          </div>
+        </div>
+
+        <div class="computer-grid-container">
+          <!-- Column 1: Control Center -->
+          <div class="glass-card computer-control-panel">
+            <div class="computer-box-header">
+              <span class="computer-header-icon">⚙️</span>
+              <h2>Control Center</h2>
+            </div>
+            
+            <form id="computer-form">
+              <div class="form-group">
+                <label for="computer-api-key">Gemini API Key</label>
+                <div class="computer-key-input-wrapper">
+                  <input type="password" id="computer-api-key" placeholder="Enter your gemini-3.5 API key..." autocomplete="current-password">
+                  <button type="button" id="computer-toggle-key-visibility" class="computer-icon-btn" title="Toggle visibility">👁️</button>
+                </div>
+                <span class="computer-input-hint">Leave blank to use Simulation/Playground Mode. Stored locally in your browser.</span>
+              </div>
+
+              <div class="form-group">
+                <label for="computer-start-url">Starting Web Address</label>
+                <input type="url" id="computer-start-url" value="https://www.google.com" required>
+              </div>
+
+              <div class="form-group">
+                <label for="computer-task-input">Agent Instructions</label>
+                <textarea id="computer-task-input" rows="4" placeholder="Describe the task for Gemini... (e.g. Search for Wikipedia's article on artificial intelligence, click the history section.)" required></textarea>
+              </div>
+
+              <!-- Mode Selector Switch -->
+              <div class="form-group computer-toggle-wrapper">
+                <span class="computer-toggle-label">Playground Mode (Simulation)</span>
+                <label class="computer-switch">
+                  <input type="checkbox" id="computer-sim-mode" checked>
+                  <span class="computer-slider round"></span>
+                </label>
+              </div>
+              <p class="computer-toggle-desc">Runs pre-configured automation scenarios using a headless browser. No API key needed.</p>
+
+              <button type="submit" class="primary-btn" id="computer-run-btn">
+                <span>DEPLOY AGENT CYCLE</span>
+                <span class="loader-spinner hidden"></span>
+              </button>
+            </form>
+
+            <!-- Run Statistics -->
+            <div class="computer-stats-box hidden" id="computer-live-stats">
+              <div class="computer-box-header">
+                <span class="computer-header-icon">📊</span>
+                <h2>Run Statistics</h2>
+              </div>
+              <div class="computer-stats-grid">
+                <div class="computer-stat-item">
+                  <span class="computer-stat-val" id="computer-stat-steps">0</span>
+                  <span class="computer-stat-lbl">Steps Taken</span>
+                </div>
+                <div class="computer-stat-item">
+                  <span class="computer-stat-val" id="computer-stat-time">0s</span>
+                  <span class="computer-stat-lbl">Elapsed Time</span>
+                </div>
+                <div class="computer-stat-item">
+                  <span class="computer-stat-val" id="computer-stat-status">Idle</span>
+                  <span class="computer-stat-lbl">Status</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Column 2: Visualizer Screen -->
+          <div class="computer-visualizer-column">
+            <!-- Viewport Box -->
+            <div class="glass-card computer-viewport-box">
+              <div class="computer-viewport-header">
+                <div class="computer-window-decorations">
+                  <span class="computer-dot red"></span>
+                  <span class="computer-dot yellow"></span>
+                  <span class="computer-dot green"></span>
+                </div>
+                <div class="computer-address-bar" id="computer-viewport-url">https://www.google.com</div>
+                <button type="button" class="computer-abort-btn hidden" id="computer-abort-btn">ABORT AGENT</button>
+              </div>
+
+              <div class="computer-viewport-canvas-container" id="computer-canvas-container">
+                <!-- Simulated Cursor -->
+                <div id="computer-mouse-cursor" class="computer-mouse-pointer hidden">
+                  <svg class="computer-cursor-svg" viewBox="0 0 24 24" width="24" height="24">
+                    <path d="M4 3l15 11-6.5.7 4.5 7.3-3.2 2-4.5-7.5-3.3 6V3z" fill="white" stroke="black" stroke-width="2"/>
+                  </svg>
+                  <div class="computer-click-pulse"></div>
+                </div>
+                
+                <!-- Inspector Target Marker -->
+                <div id="computer-target-dot" class="computer-target-marker hidden"></div>
+                
+                <!-- Viewport Image -->
+                <img id="computer-viewport-image" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='1024' height='768' viewBox='0 0 1024 768'><rect width='100%' height='100%' fill='%23181824'/><text x='50%' y='50%' font-family='sans-serif' font-size='24' fill='%234d4d75' text-anchor='middle'>Deploy the agent to render live browser screenshots</text></svg>" alt="Browser Viewport Screen">
+              </div>
+
+              <div class="computer-viewport-inspector">
+                <span class="computer-inspector-coordinate" id="computer-coords-hover">Hover: (--, --)</span>
+                <span class="computer-inspector-separator">|</span>
+                <span class="computer-inspector-coordinate" id="computer-coords-click">Click: (--, --)</span>
+                <div class="computer-inspector-copy-group">
+                  <input type="text" id="computer-copy-val" readonly placeholder="[x, y]">
+                  <button type="button" class="computer-copy-coord-btn" id="computer-copy-btn">Copy</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Timeline & Steps -->
+            <div class="glass-card computer-timeline-box">
+              <div class="computer-box-header computer-timeline-header">
+                <span class="computer-header-icon">🧭</span>
+                <h2>Action History Timeline</h2>
+                <div class="computer-playback-controls">
+                  <button type="button" class="computer-playback-btn" id="computer-play-prev-btn" title="Previous Step">⏮️</button>
+                  <button type="button" class="computer-playback-btn" id="computer-play-toggle-btn" title="Play Slideshow">⏯️</button>
+                  <button type="button" class="computer-playback-btn" id="computer-play-next-btn" title="Next Step">⏭️</button>
+                  <select id="computer-playback-speed" class="computer-speed-select">
+                    <option value="2000">1x (2s)</option>
+                    <option value="1000">2x (1s)</option>
+                    <option value="4000">0.5x (4s)</option>
+                  </select>
+                </div>
+              </div>
+              <div class="computer-timeline-steps" id="computer-timeline-list">
+                <div class="computer-empty-timeline">No agent steps recorded yet. Start a run above.</div>
+              </div>
+            </div>
+
+            <!-- Compiled Agent Report -->
+            <div class="glass-card computer-report-box hidden" id="computer-report-box">
+              <div class="computer-box-header">
+                <span class="computer-header-icon">📝</span>
+                <h2>Final Research Report</h2>
+              </div>
+              <div class="computer-report-content" id="computer-report-content"></div>
+            </div>
+          </div>
+
+          <!-- Column 3: Terminal Feed & History -->
+          <div class="computer-terminal-column">
+            <!-- Live Console Logs -->
+            <div class="glass-card computer-console-box">
+              <div class="computer-box-header">
+                <span class="computer-header-icon">💻</span>
+                <h2>System Logs Console</h2>
+                <button type="button" class="computer-clear-btn" id="computer-clear-console-btn">Clear</button>
+              </div>
+              <div class="computer-console-output" id="computer-console-output">
+                <span class="computer-sys-msg">[System] Ready to spawn agent session...</span>
+              </div>
+            </div>
+
+            <!-- Session History -->
+            <div class="glass-card computer-history-box">
+              <div class="computer-box-header">
+                <span class="computer-header-icon">📂</span>
+                <h2>Execution History Log</h2>
+                <button type="button" class="computer-clear-btn computer-danger" id="computer-clear-history-btn">Clear All</button>
+              </div>
+              <div class="computer-history-list" id="computer-history-list">
+                <!-- Loaded dynamically -->
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="app-footer">
+      <p>CEREBRO OMEGA OS v2.1 &nbsp;•&nbsp; Autonomous Cognitive Research Shell &nbsp;•&nbsp; LangGraph + Crawlee + Qdrant</p>
+    </footer>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

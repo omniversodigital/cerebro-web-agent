@@ -1,0 +1,20 @@
+{
+  "name": "cerebro-scraper",
+  "version": "1.0.0",
+  "description": "Crawlee & Playwright/Puppeteer Scraper microservice for CEREBRO OMEGA Web Agent",
+  "main": "scraper/server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node scraper/server.js",
+    "test": "node scraper/crawler.js",
+    "test:computer": ".venv\\Scripts\\python.exe -m pytest tests/"
+  },
+  "dependencies": {
+    "crawlee": "^3.12.0",
+    "playwright": "^1.49.0",
+    "puppeteer": "^23.10.0",
+    "express": "^4.21.1",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5"
+  }
+}

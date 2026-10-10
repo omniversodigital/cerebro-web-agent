@@ -1,0 +1,7 @@
+{
+  "scraper_port": 3000,
+  "max_crawl_pages": 3,
+  "n8n_webhook_url": "http://localhost:5678/webhook/cerebro-research-alert",
+  "qdrant_db_path": "./qdrant_db",
+  "qdrant_collection_name": "cerebro_research_facts"
+}

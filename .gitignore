@@ -1,0 +1,14 @@
+node_modules/
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.env
+.env.local
+*.db
+qdrant_db/
+computer_history.json
+run_history.json
+.pytest_cache/
+.DS_Store
+*.log

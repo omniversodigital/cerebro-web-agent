@@ -1,0 +1,45 @@
+version: '3.8'
+
+services:
+  postgres-db:
+    image: postgres:15-alpine
+    container_name: cerebro-postgres-db
+    environment:
+      POSTGRES_DB: cerebro_db
+      POSTGRES_USER: cerebro_user
+      POSTGRES_PASSWORD: cerebro_secure_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  redis-cache:
+    image: redis:7-alpine
+    container_name: cerebro-redis-cache
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+
+  cerebro-agent:
+    build: .
+    container_name: cerebro-omega-web-agent
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - DATABASE_URL=postgresql://cerebro_user:cerebro_secure_password@postgres-db:5432/cerebro_db
+    volumes:
+      - ./public/runs:/app/public/runs
+      - ./cerebro_agent.db:/app/cerebro_agent.db
+    depends_on:
+      - postgres-db
+      - redis-cache
+    restart: unless-stopped
+
+volumes:
+  pgdata:
